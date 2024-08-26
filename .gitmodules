@@ -1,0 +1,9 @@
+[submodule "api-gateway"]
+	path = api-gateway
+	url = https://github.com/GestorDeStock/api-gateway.git
+[submodule "inventory-ms"]
+	path = inventory-ms
+	url = https://github.com/GestorDeStock/inventory-microservice.git
+[submodule "product-ms"]
+	path = product-ms
+	url = https://github.com/GestorDeStock/products-microservice.git

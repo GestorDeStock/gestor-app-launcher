@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+      nats-server:
+            image: nats:latest
+            ports:
+                  - ${NATS_SERVER_DASHBOARD_PORT}:${NATS_SERVER_DASHBOARD_PORT}
+
+      api-gateway:
+            build: ./api-gateway
+            ports:
+                  - ${API_GATEWAY_PORT}:${API_GATEWAY_PORT}
+            volumes:
+                  - ./api-gateway/src:/usr/src/app/src
+            command: npm run start:dev
+            environment:
+                  - PORT=${API_GATEWAY_PORT}
+                  - NATS_SERVERS=${NATS_SERVERS}
+
+      product-db:
+            container_name: product-db
+            image: postgres:latest
+            restart: always
+            volumes:
+                  - ./product-ms/postgres:/var/lib/postgresql/data
+            ports:
+                  - ${PRODUCTS_DB_PORT}:${PRODUCTS_DB_PORT}
+            environment:
+                  POSTGRES_USER: ${POSTGRES_USER}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                  POSTGRES_DB: ${PRODUCTS_DB_NAME}
+
+      product-ms:
+            depends_on:
+                  - product-db
+                  - nats-server
+            build: ./product-ms
+            volumes:
+                  - ./product-ms/src:/usr/src/app/src
+            command: npm run start:dev
+            environment:
+                  - PORT=${PRODUCT_MS_PORT}
+                  - NATS_SERVERS=${NATS_SERVERS}
+                  - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@product-db:5432/${PRODUCTS_DB_NAME}
+
+      inventory-ms:
+            build: ./inventory-ms
+            volumes:
+                  - ./inventory-ms/src:/usr/src/app/src
+            command: npm run start:dev
+            environment:
+                  - PORT=${INVENTORY_MS_PORT}
+                  - NATS_SERVERS=${NATS_SERVERS}
+                  - DATABASE_URL=${INVENTORY_DB_URL}
