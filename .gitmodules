@@ -7,3 +7,6 @@
 [submodule "product-ms"]
 	path = product-ms
 	url = https://github.com/GestorDeStock/products-microservice.git
+[submodule "sales-ms"]
+	path = sales-ms
+	url = https://github.com/GestorDeStock/sales-microservice.git
