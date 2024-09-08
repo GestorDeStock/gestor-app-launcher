@@ -52,3 +52,63 @@ services:
                   - PORT=${INVENTORY_MS_PORT}
                   - NATS_SERVERS=${NATS_SERVERS}
                   - DATABASE_URL=${INVENTORY_DB_URL}
+
+      orders-db:
+            container_name: orders-db
+            image: postgres:latest
+            restart: always
+            volumes:
+                  - ./orders-ms/postgres:/var/lib/postgresql/data
+                  - ./orders-ms/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+            ports:
+                  - ${ORDERS_DB_PORT}:${ORDERS_DB_PORT}
+            environment:
+                  POSTGRES_USER: ${POSTGRES_USER}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                  POSTGRES_DB: ${ORDERS_DB_NAME}
+            command: postgres -c 'config_file=/etc/postgresql/postgresql.conf' -p ${ORDERS_DB_PORT}
+
+      orders-ms:
+            depends_on:
+                  - orders-db
+                  - nats-server
+            build: ./orders-ms
+            volumes:
+                  - ./orders-ms/src:/usr/src/app/src
+            command: npm run start:dev
+            environment:
+                  - PORT=${ORDERS_MS_PORT}
+                  - NATS_SERVERS=${NATS_SERVERS}
+                  - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@orders-db:${ORDERS_DB_PORT}/${ORDERS_DB_NAME}
+                  - DB_RETRY_CONNECTIONS=${DB_RETRY_CONNECTIONS}
+                  - DB_RETRY_INTERVAL=${DB_RETRY_INTERVAL}
+
+      sales-db:
+            container_name: sales-db
+            image: postgres:latest
+            restart: always
+            volumes:
+                  - ./sales-ms/postgres:/var/lib/postgresql/data
+                  - ./sales-ms/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+            ports:
+                  - ${SALES_DB_PORT}:${SALES_DB_PORT}
+            environment:
+                  POSTGRES_USER: ${POSTGRES_USER}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                  POSTGRES_DB: ${SALES_DB_NAME}
+            command: postgres -c 'config_file=/etc/postgresql/postgresql.conf' -p ${SALES_DB_PORT}
+
+      sales-ms:
+            depends_on:
+                  - sales-db
+                  - nats-server
+            build: ./sales-ms
+            volumes:
+                  - ./sales-ms/src:/usr/src/app/src
+            command: npm run start:dev
+            environment:
+                  - PORT=${SALES_MS_PORT}
+                  - NATS_SERVERS=${NATS_SERVERS}
+                  - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@sales-db:${SALES_DB_PORT}/${SALES_DB_NAME}
+                  - DB_RETRY_CONNECTIONS=${DB_RETRY_CONNECTIONS}
+                  - DB_RETRY_INTERVAL=${DB_RETRY_INTERVAL}
